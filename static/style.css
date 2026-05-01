@@ -1,29 +1,309 @@
+/* ======================
+   BASE STYLES
+   ====================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
-    font-family: Arial;
-    background: #eef2ff;
-    text-align: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
 }
 
 .container {
-    margin-top: 60px;
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: fadeIn 0.5s ease-in;
 }
 
-input {
-    padding: 10px;
-    width: 300px;
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ======================
+   HEADER
+   ====================== */
+h1 {
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 28px;
+}
+
+h1::before {
+    content: "🏥 ";
+}
+
+.container > p {
+    color: #666;
+    margin-bottom: 25px;
+    font-size: 16px;
+}
+
+/* ======================
+   FORM
+   ====================== */
+form {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+
+input[type="text"] {
+    flex: 1;
+    min-width: 250px;
+    padding: 14px 18px;
+    font-size: 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 50px;
+    outline: none;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+input[type="text"]:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 button {
-    padding: 10px 20px;
-    background: blue;
+    padding: 14px 28px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
 }
 
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+/* ======================
+   RESULTS SECTION
+   ====================== */
+.result {
+    margin-top: 30px;
+    animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.result h2 {
+    color: #333;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid #667eea;
+    display: inline-block;
+}
+
+.result h2::before {
+    content: "📊 ";
+}
+
+.result > p {
+    background: #f0f4ff;
+    padding: 12px;
+    border-radius: 10px;
+    margin: 15px 0;
+    font-size: 16px;
+    color: #333;
+}
+
+/* ======================
+   CARDS
+   ====================== */
 .card {
     background: white;
-    margin: 10px auto;
-    padding: 15px;
-    width: 350px;
-    border-radius: 10px;
+    margin: 15px auto;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    text-align: right;
+    transition: all 0.3s ease;
+    border: 1px solid #eee;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.card h3 {
+    color: #667eea;
+    margin-bottom: 12px;
+    font-size: 20px;
+}
+
+.card h3::before {
+    content: "🦠 ";
+}
+
+.card p {
+    font-weight: bold;
+    margin: 10px 0 5px 0;
+    color: #555;
+}
+
+.card p::before {
+    content: "🧪 ";
+}
+
+.card ul {
+    list-style: none;
+    padding: 0;
+}
+
+.card li {
+    padding: 5px 0;
+    color: #666;
+    text-align: right;
+}
+
+.card li::before {
+    content: "✅ ";
+    color: #28a745;
+}
+
+/* ======================
+   DOWNLOAD SECTION
+   ====================== */
+.download-section {
+    margin-top: 30px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #eef2ff 100%);
+    border-radius: 15px;
+    text-align: center;
+}
+
+.download-section h3 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.download-section h3::before {
+    content: "📄 ";
+}
+
+.download-section p {
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.download-btn {
+    display: inline-block;
+    padding: 12px 25px;
+    background: #28a745;
+    color: white;
+    text-decoration: none;
+    border-radius: 50px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.download-btn:hover {
+    background: #218838;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+}
+
+.download-btn::before {
+    content: "📥 ";
+}
+
+/* ======================
+   RESPONSIVE DESIGN (للجوال)
+   ====================== */
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+    
+    .container {
+        padding: 20px;
+    }
+    
+    h1 {
+        font-size: 22px;
+    }
+    
+    input[type="text"] {
+        min-width: 100%;
+        padding: 12px;
+        font-size: 14px;
+    }
+    
+    button {
+        width: 100%;
+        padding: 12px;
+    }
+    
+    .card {
+        width: 100%;
+        padding: 15px;
+    }
+    
+    .card h3 {
+        font-size: 18px;
+    }
+    
+    .result h2 {
+        font-size: 20px;
+    }
+    
+    .download-btn {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+}
+
+/* ======================
+   ANIMATIONS
+   ====================== */
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+button:focus {
+    outline: none;
+    animation: pulse 0.5s ease;
 }
