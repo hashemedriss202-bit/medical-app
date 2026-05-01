@@ -2,48 +2,45 @@
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <title>Medical AI System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>النظام الطبي الذكي - Medical AI</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
 <div class="container">
-
     <h1>🏥 النظام الطبي الذكي</h1>
+    <p>أدخل أعراضك وسيقوم النظام بتحليلها وتقديم النتائج والفحوصات المناسبة</p>
 
-    <form method="POST" action="/analyze">
-        <input type="text" name="symptoms" placeholder="اكتب الأعراض..." required>
-        <button type="submit">تحليل</button>
+    <form method="POST" action="/analyze-form">
+        <input type="text" name="symptoms" placeholder="مثال: حمى وسعال وصداع" required>
+        <button type="submit">🔍 تحليل</button>
     </form>
 
     {% if results %}
         <div class="result">
-
             <h2>📊 النتائج</h2>
-            <p><b>الأعراض:</b> {{ input_text }}</p>
+            <p><strong>🩺 الأعراض:</strong> {{ input_text }}</p>
 
             {% for item in results[:5] %}
                 <div class="card">
-                    <h3>{{ item.disease }} - {{ item.probability }}%</h3>
-
-                    <p><b>الفحوصات:</b></p>
+                    <h3>🦠 {{ item.disease }} - {{ item.probability }}%</h3>
+                    <p><strong>🧪 الفحوصات الموصى بها:</strong></p>
                     <ul>
                         {% for test in item.tests %}
-                            <li>{{ test }}</li>
+                            <li>✅ {{ test }}</li>
                         {% endfor %}
                     </ul>
                 </div>
             {% endfor %}
 
-            <h3>📈 الرسم البياني</h3>
-            <img src="/static/chart.png" width="350">
-
-            <h3>📄 التقرير</h3>
-            <p>تم إنشاء report.pdf</p>
-
+            <div class="download-section">
+                <h3>📄 التقرير الطبي</h3>
+                <p>تم إنشاء التقرير بنجاح. يمكنك تحميله من الرابط أدناه:</p>
+                <a href="/download-pdf" class="download-btn">📥 تحميل تقرير PDF</a>
+            </div>
         </div>
     {% endif %}
-
 </div>
 
 </body>
