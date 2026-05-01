@@ -100,7 +100,7 @@ def dashboard():
     return render_template("dashboard.html")
 
 # ======================
-# 🔬 API Endpoint
+# 🔬 API Endpoint (لـ Flutter أو التطبيقات الأخرى)
 # ======================
 @app.route("/analyze", methods=["POST"])
 def analyze():
@@ -132,6 +132,35 @@ def analyze():
     generate_pdf(symptoms_input, results)
     
     return jsonify(results)
+
+# ======================
+# 🖥️ HTML Form Endpoint (للواجهة الأمامية)
+# ======================
+@app.route("/analyze-form", methods=["POST"])
+def analyze_form():
+    symptoms_input = request.form.get("symptoms", "").strip()
+    
+    if not symptoms_input:
+        return "الرجاء إدخال الأعراض", 400
+    
+    api_results = analyze_with_api(symptoms_input)
+    
+    results = []
+    for r in api_results:
+        eng = r.get("disease", "")
+        prob = float(r.get("probability", 0)) * 100
+        
+        results.append({
+            "disease": disease_ar.get(eng, eng),
+            "probability": round(prob, 2),
+            "tests": tests_dict.get(eng, ["استشارة طبيب"])
+        })
+    
+    results = sorted(results, key=lambda x: x["probability"], reverse=True)
+    
+    generate_pdf(symptoms_input, results)
+    
+    return render_template("index.html", results=results, input_text=symptoms_input)
 
 # ======================
 # 📥 Download PDF
