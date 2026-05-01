@@ -1,10 +1,99 @@
-from flask import Flask, request, jsonify, render_template, send_file
+from flask import Flask, request, jsonify, render_template, send_file, session, redirect, url_for, flash
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
+from functools import wraps
 import requests
 import os
+import json
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "medical_app_secret_key_2026")
+
+# ======================
+# 👤 USER DATABASE (قاعدة بيانات المستخدمين المؤقتة)
+# ======================
+# في التطبيق الحقيقي، استخدم قاعدة بيانات حقيقية
+users_db = {
+    "doctor": {
+        "password": "doctor123",
+        "name": "دكتور أحمد",
+        "role": "doctor"
+    },
+    "patient": {
+        "password": "patient123",
+        "name": "مريض",
+        "role": "patient"
+    },
+    "admin": {
+        "password": "admin123",
+        "name": "مدير النظام",
+        "role": "admin"
+    }
+}
+
+# ======================
+# 🔐 DECORATOR FOR LOGIN REQUIRED
+# ======================
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'username' not in session:
+            flash('الرجاء تسجيل الدخول أولاً', 'warning')
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# ======================
+# 📄 LOGIN & REGISTER ROUTES
+# ======================
+@app.route("/login", methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+        
+        if username in users_db and users_db[username]['password'] == password:
+            session['username'] = username
+            session['user_name'] = users_db[username]['name']
+            session['role'] = users_db[username]['role']
+            flash(f'مرحباً {users_db[username]["name"]}！', 'success')
+            
+            # تسجيل دخول الطبيب يذهب للوحة التحكم
+            if users_db[username]['role'] == 'doctor':
+                return redirect(url_for('dashboard'))
+            return redirect(url_for('home'))
+        else:
+            flash('اسم المستخدم أو كلمة المرور غير صحيحة', 'danger')
+    
+    return render_template("login.html")
+
+@app.route("/register", methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+        name = request.form.get('name', '').strip()
+        
+        if username in users_db:
+            flash('اسم المستخدم موجود بالفعل', 'danger')
+        elif len(password) < 4:
+            flash('كلمة المرور يجب أن تكون 4 أحرف على الأقل', 'danger')
+        else:
+            users_db[username] = {
+                "password": password,
+                "name": name,
+                "role": "patient"
+            }
+            flash('تم التسجيل بنجاح！يمكنك تسجيل الدخول الآن', 'success')
+            return redirect(url_for('login'))
+    
+    return render_template("register.html")
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash('تم تسجيل الخروج بنجاح', 'info')
+    return redirect(url_for('login'))
 
 # ======================
 # 🔗 AI SERVER (مع بيانات احتياطية)
@@ -12,7 +101,6 @@ app = Flask(__name__)
 API_URL = "https://clapper-hunger-financial.ngrok-free.dev/analyze"
 
 def analyze_with_api(symptoms):
-    # بيانات تجريبية احتياطية
     mock_data = [
         {"disease": "flu", "probability": 0.82},
         {"disease": "cold", "probability": 0.67},
@@ -31,150 +119,135 @@ def analyze_with_api(symptoms):
         return mock_data
 
 # ======================
-# 🧠 SMART ANALYSIS (قاعدة أمراض موسعة)
+# 🧠 SMART ANALYSIS
 # ======================
 def smart_diagnosis(symptoms):
-    """تحليل ذكي للأعراض باستخدام قاعدة معرفة موسعة"""
     symptoms_lower = symptoms.lower()
     results = []
     
-    # قاعدة المعرفة الموسعة (مرض -> كلمات مفتاحية)
     rules = {
         "flu": {
-            "keywords": ["حمى", "سعال", "احتقان", "إنفلونزا", "رشح", "زكام", "عطس", "تعب", "آلام جسم"],
+            "keywords": ["حمى", "سعال", "احتقان", "إنفلونزا", "رشح", "تعب"],
             "ar_name": "إنفلونزا",
-            "tests": ["تحليل CBC", "فحص فيروسات", "مسحة أنف"]
+            "tests": ["تحليل CBC", "فحص فيروسات"]
         },
         "cold": {
-            "keywords": ["زكام", "رشح", "عطس", "احتقان أنف", "سعال بسيط", "حمى خفيفة"],
+            "keywords": ["زكام", "رشح", "عطس", "احتقان أنف", "سعال بسيط"],
             "ar_name": "نزلة برد",
             "tests": ["راحة", "سوائل دافئة", "فيتامين C"]
         },
         "pneumonia": {
-            "keywords": ["التهاب رئوي", "ضيق تنفس", "كحة شديدة", "بلغم", "حمى عالية", "ألم صدر"],
+            "keywords": ["التهاب رئوي", "ضيق تنفس", "كحة شديدة", "بلغم", "حمى عالية"],
             "ar_name": "التهاب رئوي",
             "tests": ["أشعة صدر", "تحليل دم", "زراعة بلغم"]
         },
         "allergy": {
-            "keywords": ["حساسية", "عطس", "حكة", "عيون دامعة", "طفح جلدي", "احمرار", "تورم"],
+            "keywords": ["حساسية", "عطس", "حكة", "عيون دامعة", "طفح جلدي"],
             "ar_name": "حساسية",
-            "tests": ["اختبار حساسية", "فحص IgE", "تجنب مسببات الحساسية"]
+            "tests": ["اختبار حساسية", "فحص IgE"]
         },
         "asthma": {
-            "keywords": ["ربو", "ضيق تنفس", "صوت صفير", "كحة ليلية", "صعوبة تنفس"],
+            "keywords": ["ربو", "ضيق تنفس", "صوت صفير", "كحة ليلية"],
             "ar_name": "ربو",
-            "tests": ["وظائف تنفسية", "تصوير الصدر", "اختبار ميثاكولين"]
+            "tests": ["وظائف تنفسية", "تصوير الصدر"]
         },
         "sinusitis": {
-            "keywords": ["جيوب أنفية", "صداع", "ضغط وجه", "احتقان أنف", "مخاط سميك", "ألم أسنان"],
+            "keywords": ["جيوب أنفية", "صداع", "ضغط وجه", "احتقان أنف"],
             "ar_name": "التهاب الجيوب الأنفية",
-            "tests": ["منظار الأنف", "أشعة مقطعية", "مضادات حيوية"]
-        },
-        "arthritis": {
-            "keywords": ["التهاب مفاصل", "ألم مفاصل", "تورم مفاصل", "تيبس صباحي", "احمرار مفصل"],
-            "ar_name": "التهاب المفاصل",
-            "tests": ["تحليل الروماتويد", "أشعة مفاصل", "فحص CRP"]
+            "tests": ["منظار الأنف", "أشعة مقطعية"]
         },
         "urinary infection": {
-            "keywords": ["التهاب بول", "حرقة بول", "تبول متكرر", "ألم أسفل البطن", "بول عكر"],
+            "keywords": ["التهاب بول", "حرقة بول", "تبول متكرر", "ألم أسفل البطن"],
             "ar_name": "التهاب المسالك البولية",
-            "tests": ["تحليل بول", "زراعة بول", "موجات فوق صوتية"]
+            "tests": ["تحليل بول", "زراعة بول"]
         },
         "anemia": {
-            "keywords": ["فقر دم", "تعب", "شحوب", "دوخة", "ضيق نفس", "تساقط شعر", "برودة أطراف"],
+            "keywords": ["فقر دم", "تعب", "شحوب", "دوخة", "ضيق نفس"],
             "ar_name": "فقر الدم",
-            "tests": ["صورة دم كاملة", "حديد serum", "فيتامين B12"]
-        },
-        "thyroid": {
-            "keywords": ["غدة درقية", "تعب", "تغير وزن", "خفقان", "تساقط شعر", "برودة", "عصبية"],
-            "ar_name": "مشاكل الغدة الدرقية",
-            "tests": ["تحليل هرمونات الغدة", "موجات فوق صوتية", "فحص T3,T4,TSH"]
-        },
-        "liver disease": {
-            "keywords": ["كبد", "يرقان", "اصفرار", "تعب", "استفراغ", "غثيان", "ألم بطن", "فقدان شهية"],
-            "ar_name": "أمراض الكبد",
-            "tests": ["إنزيمات الكبد", "الموجات فوق الصوتية", "تحليل وظائف الكبد"]
-        },
-        "kidney disease": {
-            "keywords": ["كلية", "تورم قدم", "تعب", "تبول قليل", "رغوة في البول", "ضغط مرتفع"],
-            "ar_name": "أمراض الكلى",
-            "tests": ["وظائف الكلى", "تحليل كرياتينين", "يوريا", "موجات فوق صوتية"]
+            "tests": ["صورة دم كاملة", "حديد serum"]
         },
         "migraine": {
-            "keywords": ["صداع نصفي", "شقيقة", "صداع شديد", "غثيان", "حساسية ضوء", "ألم خافق"],
+            "keywords": ["صداع نصفي", "شقيقة", "صداع شديد", "غثيان", "حساسية ضوء"],
             "ar_name": "صداع نصفي",
-            "tests": ["فحص أعصاب", "رنين مغناطيسي", "مسكنات"]
+            "tests": ["فحص أعصاب", "رنين مغناطيسي"]
         },
         "stomach problem": {
-            "keywords": ["معدة", "حرقة", "عسر هضم", "غثيان", "انتفاخ", "ألم بطن", "قرحة"],
+            "keywords": ["معدة", "حرقة", "عسر هضم", "غثيان", "انتفاخ", "ألم بطن"],
             "ar_name": "مشاكل المعدة",
-            "tests": ["منظار", "تحليل جرثومة المعدة", "مضادات حموضة"]
-        },
-        "diabetes": {
-            "keywords": ["سكري", "عطش شديد", "تبول كثير", "جوع", "تعب", "زغللة عيون", "تنميل"],
-            "ar_name": "سكري",
-            "tests": ["تحليل سكر صائم", "سكر تراكمي", "اختبار تحمل الجلوكوز"]
-        },
-        "blood pressure": {
-            "keywords": ["ضغط دم", "ضغط مرتفع", "صداع", "دوخة", "احمرار وجه", "خفقان"],
-            "ar_name": "ضغط الدم",
-            "tests": ["قياس الضغط", "تحليل دهون", "فحص قلب"]
-        },
-        "heart disease": {
-            "keywords": ["قلب", "ألم صدر", "خفقان", "ضيق نفس", "تعب", "انتفاخ قدمين"],
-            "ar_name": "مرض قلبي",
-            "tests": ["ECG", "إيكو قلب", "تحليل إنزيمات القلب"]
-        },
-        "food poisoning": {
-            "keywords": ["تسمم غذائي", "استفراغ", "إسهال", "غثيان", "ألم بطن", "حمى", "طعام فاسد"],
-            "ar_name": "تسمم غذائي",
-            "tests": ["تحليل براز", "زراعة براز", "سوائل وريدية"]
+            "tests": ["منظار", "تحليل جرثومة المعدة"]
         }
     }
     
-    # تحليل الأعراض
     for disease, info in rules.items():
         keywords = info["keywords"]
         matches = sum(1 for keyword in keywords if keyword in symptoms_lower)
         
         if matches > 0:
-            # حساب نسبة الاحتمال بناءً على عدد الكلمات المتطابقة
             probability = min(0.95, 0.20 + (matches / len(keywords)) * 0.75)
             results.append({
                 "disease": disease,
                 "ar_name": info["ar_name"],
                 "probability": round(probability * 100, 1),
-                "tests": info["tests"],
-                "matches": matches
+                "tests": info["tests"]
             })
     
-    # ترتيب النتائج حسب الاحتمالية
     results.sort(key=lambda x: x["probability"], reverse=True)
     
-    # إضافة بيانات احتياطية إذا لم يتم العثور على نتائج
     if not results:
         results = [
             {"disease": "unknown", "ar_name": "غير محدد", "probability": 30.0, 
-             "tests": ["استشارة طبيب متخصص", "فحص سريري"], "matches": 0}
+             "tests": ["استشارة طبيب متخصص", "فحص سريري"]}
         ]
     
-    return results[:5]  # إرجاع أفضل 5 نتائج
+    return results[:5]
 
 # ======================
-# 🌐 UI Routes
+# 📄 PDF
+# ======================
+def generate_pdf(symptoms, results, username=None):
+    os.makedirs("static", exist_ok=True)
+    doc = SimpleDocTemplate("static/report.pdf")
+    styles = getSampleStyleSheet()
+    
+    content = [
+        Paragraph("التقرير الطبي", styles["Title"]),
+        Paragraph(f"المستخدم: {username or 'زائر'}", styles["Normal"]),
+        Paragraph(f"التاريخ: {__import__('datetime').datetime.now().strftime('%Y-%m-%d %H:%M')}", styles["Normal"]),
+        Paragraph(f"الأعراض: {symptoms}", styles["Normal"]),
+        Paragraph(" ", styles["Normal"]),
+        Paragraph("النتائج:", styles["Heading2"])
+    ]
+    
+    for r in results[:5]:
+        content.append(Paragraph(f"• {r['ar_name']}: {r['probability']}%", styles["Normal"]))
+        tests_text = "الفحوصات: " + "، ".join(r['tests'])
+        content.append(Paragraph(tests_text, styles["Normal"]))
+        content.append(Paragraph(" ", styles["Normal"]))
+    
+    doc.build(content)
+    return "static/report.pdf"
+
+# ======================
+# 🌐 UI ROUTES (Protected)
 # ======================
 @app.route("/")
+@login_required
 def home():
-    return render_template("index.html")
+    return render_template("index.html", username=session.get('user_name'))
 
 @app.route("/dashboard")
+@login_required
 def dashboard():
-    return render_template("dashboard.html")
+    if session.get('role') != 'doctor':
+        flash('هذه الصفحة مخصصة للأطباء فقط', 'danger')
+        return redirect(url_for('home'))
+    return render_template("dashboard.html", username=session.get('user_name'))
 
 # ======================
-# 🔬 API Endpoint (لـ Flutter أو التطبيقات الأخرى)
+# 🔬 API Endpoint
 # ======================
 @app.route("/analyze", methods=["POST"])
+@login_required
 def analyze():
     data = request.get_json(silent=True)
     
@@ -186,10 +259,8 @@ def analyze():
     if not symptoms_input:
         return jsonify({"error": "Empty symptoms"}), 400
     
-    # استخدام التحليل الذكي بدلاً من API الخارجي
     results = smart_diagnosis(symptoms_input)
     
-    # تنسيق النتائج
     formatted_results = []
     for r in results:
         formatted_results.append({
@@ -198,24 +269,23 @@ def analyze():
             "tests": r["tests"]
         })
     
-    generate_pdf(symptoms_input, formatted_results)
+    generate_pdf(symptoms_input, formatted_results, session.get('username'))
     
     return jsonify(formatted_results)
 
 # ======================
-# 🖥️ HTML Form Endpoint (للواجهة الأمامية)
+# 🖥️ HTML Form Endpoint
 # ======================
 @app.route("/analyze-form", methods=["POST"])
+@login_required
 def analyze_form():
     symptoms_input = request.form.get("symptoms", "").strip()
     
     if not symptoms_input:
         return "الرجاء إدخال الأعراض", 400
     
-    # استخدام التحليل الذكي
     results = smart_diagnosis(symptoms_input)
     
-    # تنسيق النتائج للعرض
     formatted_results = []
     for r in results:
         formatted_results.append({
@@ -224,43 +294,15 @@ def analyze_form():
             "tests": r["tests"]
         })
     
-    generate_pdf(symptoms_input, formatted_results)
+    generate_pdf(symptoms_input, formatted_results, session.get('username'))
     
-    return render_template("index.html", results=formatted_results, input_text=symptoms_input)
-
-# ======================
-# 📄 PDF
-# ======================
-def generate_pdf(symptoms, results):
-    os.makedirs("static", exist_ok=True)
-    doc = SimpleDocTemplate("static/report.pdf")
-    styles = getSampleStyleSheet()
-    
-    content = [
-        Paragraph("التقرير الطبي", styles["Title"]),
-        Paragraph(f"الأعراض: {symptoms}", styles["Normal"]),
-        Paragraph(" ", styles["Normal"]),
-        Paragraph("النتائج:", styles["Heading2"])
-    ]
-    
-    for r in results[:5]:
-        content.append(
-            Paragraph(
-                f"• {r['disease']}: {r['probability']}%",
-                styles["Normal"]
-            )
-        )
-        tests_text = "الفحوصات: " + "، ".join(r['tests'])
-        content.append(Paragraph(tests_text, styles["Normal"]))
-        content.append(Paragraph(" ", styles["Normal"]))
-    
-    doc.build(content)
-    return "static/report.pdf"
+    return render_template("index.html", results=formatted_results, input_text=symptoms_input, username=session.get('user_name'))
 
 # ======================
 # 📥 Download PDF
 # ======================
 @app.route("/download-pdf")
+@login_required
 def download_pdf():
     pdf_path = "static/report.pdf"
     if os.path.exists(pdf_path):
