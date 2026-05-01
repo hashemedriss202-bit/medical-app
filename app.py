@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify, render_template, send_file
 import matplotlib
 matplotlib.use('Agg')  # مهم جدًا لمنع أخطاء matplotlib
-import matplotlib.pyplot as plt
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 import requests
@@ -94,7 +93,7 @@ def generate_pdf(symptoms, results):
 # ======================
 # 📊 Chart
 # ======================
-def create_chart(results):
+#def create_chart(results):
     os.makedirs("static", exist_ok=True)
     
     if not results:
