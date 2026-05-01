@@ -93,8 +93,6 @@ def generate_pdf(symptoms, results):
 # ======================
 # 📊 Chart
 # ======================
-#def create_chart(results):
-    os.makedirs("static", exist_ok=True)
     
     if not results:
         return
