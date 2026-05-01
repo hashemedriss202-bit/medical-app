@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>Medical AI System</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="container">
+
+    <h1>🏥 النظام الطبي الذكي</h1>
+
+    <form method="POST" action="/analyze">
+        <input type="text" name="symptoms" placeholder="اكتب الأعراض..." required>
+        <button type="submit">تحليل</button>
+    </form>
+
+    {% if results %}
+        <div class="result">
+
+            <h2>📊 النتائج</h2>
+            <p><b>الأعراض:</b> {{ input_text }}</p>
+
+            {% for item in results[:5] %}
+                <div class="card">
+                    <h3>{{ item.disease }} - {{ item.probability }}%</h3>
+
+                    <p><b>الفحوصات:</b></p>
+                    <ul>
+                        {% for test in item.tests %}
+                            <li>{{ test }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+
+            <h3>📈 الرسم البياني</h3>
+            <img src="/static/chart.png" width="350">
+
+            <h3>📄 التقرير</h3>
+            <p>تم إنشاء report.pdf</p>
+
+        </div>
+    {% endif %}
+
+</div>
+
+</body>
+</html>
