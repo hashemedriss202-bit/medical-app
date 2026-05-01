@@ -1,7 +1,4 @@
 from flask import Flask, request, jsonify, render_template, send_file
-import matplotlib
-matplotlib.use('Agg')  # مهم جدًا لمنع أخطاء matplotlib
-import matplotlib.pyplot as plt
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 import requests
@@ -92,14 +89,6 @@ def generate_pdf(symptoms, results):
     return "static/report.pdf"
 
 # ======================
-# 📊 Chart (معطل مؤقتاً)
-# ======================
-def create_chart(results):
-    """دالة إنشاء الرسم البياني - معطلة مؤقتاً لإتمام النشر"""
-    # تم تعطيل هذه الدالة لأن matplotlib تسبب مشاكل في النشر
-    pass
-
-# ======================
 # 🌐 UI Routes
 # ======================
 @app.route("/")
@@ -141,7 +130,6 @@ def analyze():
     results = sorted(results, key=lambda x: x["probability"], reverse=True)
     
     generate_pdf(symptoms_input, results)
-    # create_chart(results)  # معطل مؤقتاً
     
     return jsonify(results)
 
