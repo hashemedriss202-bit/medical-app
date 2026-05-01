@@ -5,6 +5,7 @@ from functools import wraps
 import requests
 import os
 import json
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "medical_app_secret_key_2026")
@@ -12,7 +13,6 @@ app.secret_key = os.environ.get("SECRET_KEY", "medical_app_secret_key_2026")
 # ======================
 # 👤 USER DATABASE (قاعدة بيانات المستخدمين المؤقتة)
 # ======================
-# في التطبيق الحقيقي، استخدم قاعدة بيانات حقيقية
 users_db = {
     "doctor": {
         "password": "doctor123",
@@ -58,7 +58,6 @@ def login():
             session['role'] = users_db[username]['role']
             flash(f'مرحباً {users_db[username]["name"]}！', 'success')
             
-            # تسجيل دخول الطبيب يذهب للوحة التحكم
             if users_db[username]['role'] == 'doctor':
                 return redirect(url_for('dashboard'))
             return redirect(url_for('home'))
@@ -94,29 +93,6 @@ def logout():
     session.clear()
     flash('تم تسجيل الخروج بنجاح', 'info')
     return redirect(url_for('login'))
-
-# ======================
-# 🔗 AI SERVER (مع بيانات احتياطية)
-# ======================
-API_URL = "https://clapper-hunger-financial.ngrok-free.dev/analyze"
-
-def analyze_with_api(symptoms):
-    mock_data = [
-        {"disease": "flu", "probability": 0.82},
-        {"disease": "cold", "probability": 0.67},
-        {"disease": "infection", "probability": 0.43},
-        {"disease": "pneumonia", "probability": 0.31},
-        {"disease": "stomach problem", "probability": 0.25}
-    ]
-    
-    try:
-        response = requests.post(API_URL, json={"symptoms": symptoms}, timeout=10)
-        if response.status_code == 200:
-            return response.json()
-        return mock_data
-    except Exception as e:
-        print(f"API error: {e}")
-        return mock_data
 
 # ======================
 # 🧠 SMART ANALYSIS
@@ -212,15 +188,20 @@ def generate_pdf(symptoms, results, username=None):
     content = [
         Paragraph("التقرير الطبي", styles["Title"]),
         Paragraph(f"المستخدم: {username or 'زائر'}", styles["Normal"]),
-        Paragraph(f"التاريخ: {__import__('datetime').datetime.now().strftime('%Y-%m-%d %H:%M')}", styles["Normal"]),
+        Paragraph(f"التاريخ: {datetime.now().strftime('%Y-%m-%d %H:%M')}", styles["Normal"]),
         Paragraph(f"الأعراض: {symptoms}", styles["Normal"]),
         Paragraph(" ", styles["Normal"]),
         Paragraph("النتائج:", styles["Heading2"])
     ]
     
     for r in results[:5]:
-        content.append(Paragraph(f"• {r['ar_name']}: {r['probability']}%", styles["Normal"]))
-        tests_text = "الفحوصات: " + "، ".join(r['tests'])
+        # استخدام .get() لتجنب KeyError
+        disease_name = r.get("disease") or r.get("ar_name") or "غير معروف"
+        probability = r.get("probability", 0)
+        tests = r.get("tests", ["استشارة طبيب"])
+        
+        content.append(Paragraph(f"• {disease_name}: {probability}%", styles["Normal"]))
+        tests_text = "الفحوصات: " + "، ".join(tests)
         content.append(Paragraph(tests_text, styles["Normal"]))
         content.append(Paragraph(" ", styles["Normal"]))
     
@@ -264,9 +245,9 @@ def analyze():
     formatted_results = []
     for r in results:
         formatted_results.append({
-            "disease": r["ar_name"],
-            "probability": r["probability"],
-            "tests": r["tests"]
+            "disease": r.get("ar_name", r.get("disease", "غير معروف")),
+            "probability": r.get("probability", 0),
+            "tests": r.get("tests", ["استشارة طبيب"])
         })
     
     generate_pdf(symptoms_input, formatted_results, session.get('username'))
@@ -279,24 +260,28 @@ def analyze():
 @app.route("/analyze-form", methods=["POST"])
 @login_required
 def analyze_form():
-    symptoms_input = request.form.get("symptoms", "").strip()
-    
-    if not symptoms_input:
-        return "الرجاء إدخال الأعراض", 400
-    
-    results = smart_diagnosis(symptoms_input)
-    
-    formatted_results = []
-    for r in results:
-        formatted_results.append({
-            "disease": r["ar_name"],
-            "probability": r["probability"],
-            "tests": r["tests"]
-        })
-    
-    generate_pdf(symptoms_input, formatted_results, session.get('username'))
-    
-    return render_template("index.html", results=formatted_results, input_text=symptoms_input, username=session.get('user_name'))
+    try:
+        symptoms_input = request.form.get("symptoms", "").strip()
+        
+        if not symptoms_input:
+            return "الرجاء إدخال الأعراض", 400
+        
+        results = smart_diagnosis(symptoms_input)
+        
+        formatted_results = []
+        for r in results:
+            formatted_results.append({
+                "disease": r.get("ar_name", r.get("disease", "غير معروف")),
+                "probability": r.get("probability", 0),
+                "tests": r.get("tests", ["استشارة طبيب"])
+            })
+        
+        generate_pdf(symptoms_input, formatted_results, session.get('username'))
+        
+        return render_template("index.html", results=formatted_results, input_text=symptoms_input, username=session.get('user_name'))
+    except Exception as e:
+        print(f"ERROR in analyze_form: {e}")
+        return f"حدث خطأ: {str(e)}", 500
 
 # ======================
 # 📥 Download PDF
