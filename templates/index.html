@@ -2,9 +2,17 @@
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>النظام الطبي الذكي - Medical AI</title>
     <link rel="stylesheet" href="/static/style.css">
+    
+    <!-- PWA Manifest and Theme -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="طبي AI">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
 </head>
 <body>
 
@@ -42,6 +50,41 @@
         </div>
     {% endif %}
 </div>
+
+<script>
+// تسجيل Service Worker
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then(function(registration) {
+                console.log('Service Worker registered successfully:', registration.scope);
+            })
+            .catch(function(error) {
+                console.log('Service Worker registration failed:', error);
+            });
+    });
+}
+
+// عرض رسالة التثبيت على Android
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const installBtn = document.createElement('button');
+    installBtn.textContent = '📱 تثبيت التطبيق';
+    installBtn.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#28a745;color:white;border:none;padding:12px 24px;border-radius:50px;z-index:1000;cursor:pointer;';
+    installBtn.onclick = async () => {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+            console.log('User accepted the install prompt');
+        }
+        deferredPrompt = null;
+        installBtn.remove();
+    };
+    document.body.appendChild(installBtn);
+});
+</script>
 
 </body>
 </html>

@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, send_file, session, redirect, url_for, flash
+from flask import Flask, request, jsonify, render_template, send_file, session, redirect, url_for, flash, send_from_directory
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 from functools import wraps
@@ -195,7 +195,6 @@ def generate_pdf(symptoms, results, username=None):
     ]
     
     for r in results[:5]:
-        # استخدام .get() لتجنب KeyError
         disease_name = r.get("disease") or r.get("ar_name") or "غير معروف"
         probability = r.get("probability", 0)
         tests = r.get("tests", ["استشارة طبيب"])
@@ -293,6 +292,17 @@ def download_pdf():
     if os.path.exists(pdf_path):
         return send_file(pdf_path, as_attachment=True)
     return jsonify({"error": "PDF not found"}), 404
+
+# ======================
+# 📱 PWA Routes
+# ======================
+@app.route('/service-worker.js')
+def service_worker():
+    return send_from_directory('static', 'service-worker.js')
+
+@app.route('/offline')
+def offline():
+    return render_template('offline.html')
 
 # ======================
 # ▶️ RUN
