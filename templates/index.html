@@ -1,89 +1,863 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" id="html-root">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>النظام الطبي الذكي - Medical AI</title>
-    <link rel="stylesheet" href="/static/style.css">
-    
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="/static/manifest.json">
-    <meta name="theme-color" content="#667eea">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="theme-color" content="#1e3a5f">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="طبي AI">
+    <meta name="apple-mobile-web-app-title" content="MediAI">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
+    
+    <title>MediAI - AI Medical Diagnosis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* ======================
+           VARIABLES (LIGHT MODE DEFAULT)
+        ====================== */
+        :root {
+            --bg-primary: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 50%, #e0f2fe 100%);
+            --bg-card: rgba(255, 255, 255, 0.95);
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --header-gradient: linear-gradient(135deg, #1e3a5f 0%, #2b4f7c 50%, #1e3a5f 100%);
+            --card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            --input-bg: white;
+            --example-bg: #f1f5f9;
+            --result-bg: #f8fafc;
+            --btn-gradient: linear-gradient(135deg, #2b4f7c 0%, #1e3a5f 100%);
+            --btn-hover: rgba(43, 79, 124, 0.4);
+            --success-color: #10b981;
+            --accent-color: #2b4f7c;
+        }
+
+        /* ======================
+           DARK MODE
+        ====================== */
+        body.dark {
+            --bg-primary: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            --bg-card: rgba(30, 41, 59, 0.95);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+            --header-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            --card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            --input-bg: #1e293b;
+            --example-bg: #1e293b;
+            --result-bg: #0f172a;
+            --btn-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            --btn-hover: rgba(59, 130, 246, 0.4);
+            --accent-color: #3b82f6;
+        }
+
+        body {
+            font-family: 'Cairo', 'Inter', sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            transition: all 0.3s ease;
+            color: var(--text-primary);
+        }
+
+        /* الاتجاه حسب اللغة */
+        body.lang-ar {
+            direction: rtl;
+            text-align: right;
+        }
+        
+        body.lang-en {
+            direction: ltr;
+            text-align: left;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" opacity="0.03"><path fill="%233b82f6" d="M50,0 L61.8,38.2 L100,50 L61.8,61.8 L50,100 L38.2,61.8 L0,50 L38.2,38.2 Z"/><circle cx="50" cy="50" r="15"/></svg>');
+            background-repeat: repeat;
+            background-size: 80px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* أزرار التحكم */
+        .controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            left: auto;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+        }
+        
+        body.lang-en .controls {
+            right: auto;
+            left: 20px;
+        }
+
+        .theme-toggle, .lang-toggle {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--card-shadow);
+        }
+
+        .theme-toggle:hover, .lang-toggle:hover {
+            transform: scale(1.05);
+        }
+
+        .theme-toggle i, .lang-toggle i {
+            font-size: 24px;
+            color: var(--accent-color);
+        }
+
+        /* بطاقة رئيسية */
+        .main-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border-radius: 32px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .header {
+            background: var(--header-gradient);
+            padding: 35px 30px;
+            text-align: center;
+            color: white;
+        }
+
+        .logo-icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            width: 100px;
+            height: 100px;
+            line-height: 100px;
+            border-radius: 50%;
+        }
+
+        h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .stats-section {
+            background: var(--result-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px 30px;
+        }
+
+        .stats-grid {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .stat-number {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        .form-section {
+            padding: 30px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 16px 20px;
+            font-size: 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 24px;
+            font-family: 'Cairo', 'Inter', sans-serif;
+            resize: vertical;
+            transition: all 0.3s ease;
+            background: var(--input-bg);
+            color: var(--text-primary);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .example-box {
+            background: var(--example-bg);
+            border-radius: 16px;
+            padding: 12px 20px;
+            margin-top: 15px;
+        }
+
+        .example-title {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .example-symptoms {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .example-tag {
+            background: var(--bg-card);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .example-tag:hover {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .analyze-btn {
+            background: var(--btn-gradient);
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            border-radius: 40px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            width: auto;
+            min-width: 200px;
+            justify-content: center;
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px var(--btn-hover);
+        }
+
+        .results-section {
+            background: var(--result-bg);
+            border-top: 1px solid var(--border-color);
+            padding: 30px;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .results-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .results-header i {
+            font-size: 28px;
+            color: var(--accent-color);
+        }
+
+        .results-header h2 {
+            font-size: 24px;
+            color: var(--text-primary);
+        }
+
+        .symptoms-badge {
+            background: var(--example-bg);
+            padding: 12px 18px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            border-right: 4px solid var(--accent-color);
+        }
+        
+        body.lang-en .symptoms-badge {
+            border-right: none;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .diagnosis-card {
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+            border: 1px solid var(--border-color);
+        }
+
+        .diagnosis-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .disease-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .probability-bar {
+            background: var(--border-color);
+            border-radius: 20px;
+            height: 12px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .probability-fill {
+            background: linear-gradient(90deg, var(--accent-color), #4f9bcf);
+            height: 100%;
+            border-radius: 20px;
+            transition: width 0.5s ease;
+        }
+
+        .probability-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--accent-color);
+            margin-top: 8px;
+        }
+
+        .tests-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 15px;
+        }
+
+        .tests-list li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
+            color: var(--text-primary);
+        }
+
+        .tests-list li i {
+            color: var(--success-color);
+            width: 20px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        .share-btn, .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            font-size: 14px;
+        }
+
+        .download-btn {
+            background: var(--success-color);
+            color: white;
+            text-decoration: none;
+        }
+
+        .download-btn:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+
+        .share-btn {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .share-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent-color);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 14px;
+            z-index: 1000;
+            animation: slideUp 0.3s ease;
+            box-shadow: var(--card-shadow);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 640px) {
+            body { padding: 10px; }
+            .controls { top: 10px; right: 10px; }
+            body.lang-en .controls { left: 10px; right: auto; }
+            .theme-toggle, .lang-toggle { width: 40px; height: 40px; }
+            .header { padding: 25px 20px; }
+            h1 { font-size: 24px; }
+            .logo-icon { width: 70px; height: 70px; line-height: 70px; font-size: 40px; }
+            .form-section, .results-section { padding: 20px; }
+            .disease-name { font-size: 20px; }
+            .analyze-btn, .share-btn, .download-btn { width: 100%; justify-content: center; }
+            .action-buttons { flex-direction: column; }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
 </head>
-<body>
+<body class="lang-ar">
+    <!-- أزرار التحكم -->
+    <div class="controls">
+        <div class="lang-toggle" onclick="toggleLanguage()">
+            <i class="fas fa-globe"></i>
+        </div>
+        <div class="theme-toggle" onclick="toggleTheme()">
+            <i class="fas fa-moon"></i>
+        </div>
+    </div>
 
-<div class="container">
-    <h1>🏥 النظام الطبي الذكي</h1>
-    <p>أدخل أعراضك وسيقوم نظام الذكاء الاصطناعي بتحليلها وتقديم التشخيص المناسب</p>
+    <div class="container">
+        <div class="main-card">
+            <div class="header">
+                <div class="logo-icon">
+                    <i class="fas fa-stethoscope"></i>
+                </div>
+                <h1 id="app-title">MediAI</h1>
+                <div class="subtitle" id="app-subtitle">AI Medical Diagnosis System</div>
+            </div>
 
-    <form method="POST" action="/analyze-form">
-        <input type="text" name="symptoms" placeholder="مثال: حمى، سعال، صداع، تعب" required>
-        <button type="submit">🔍 تحليل بالذكاء الاصطناعي</button>
-    </form>
+            <div class="stats-section">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-number">41</div>
+                        <div class="stat-label" id="stat-diseases">Diseases Supported</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">99%</div>
+                        <div class="stat-label" id="stat-accuracy">Accuracy</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">AI</div>
+                        <div class="stat-label" id="stat-ml">Random Forest</div>
+                    </div>
+                </div>
+            </div>
 
-    {% if results %}
-        <div class="result">
-            <h2>📊 نتائج التحليل الذكي</h2>
-            <p><strong>🩺 الأعراض المدخلة:</strong> {{ input_text }}</p>
-            
-            {% if matched_symptoms %}
-            <p><strong>✓ الأعراض المتطابقة:</strong> {{ matched_symptoms | join('، ') }}</p>
-            {% endif %}
-
-            {% for item in results %}
-                <div class="card">
-                    <h3>🦠 {{ item.disease }} - {{ item.probability }}%</h3>
+            <div class="form-section">
+                <form method="POST" action="/analyze-form" id="diagnosisForm">
+                    <textarea name="symptoms" id="symptoms" rows="3" placeholder="Enter your symptoms separated by commas...&#10;Example: fever, cough, headache, fatigue" required></textarea>
                     
-                    <p><strong>🧪 الفحوصات الموصى بها:</strong></p>
-                    <ul>
-                        {% for test in item.tests %}
-                            <li>✅ {{ test }}</li>
-                        {% endfor %}
-                    </ul>
-                    
-                    {% if item.recommendations %}
-                    <p><strong>💡 التوصيات:</strong></p>
-                    <ul>
-                        {% for rec in item.recommendations %}
-                            <li>📝 {{ rec }}</li>
-                        {% endfor %}
-                    </ul>
+                    <div class="example-box">
+                        <div class="example-title" id="example-title">
+                            <i class="fas fa-lightbulb"></i> Common examples:
+                        </div>
+                        <div class="example-symptoms">
+                            <span class="example-tag" onclick="fillSymptoms('fever, cough, fatigue, body aches')" id="ex1">🔥 Influenza</span>
+                            <span class="example-tag" onclick="fillSymptoms('sneezing, runny nose, nasal congestion')" id="ex2">🤧 Common Cold</span>
+                            <span class="example-tag" onclick="fillSymptoms('severe headache, nausea, light sensitivity')" id="ex3">🤕 Migraine</span>
+                            <span class="example-tag" onclick="fillSymptoms('excessive thirst, frequent urination, fatigue')" id="ex4">🩸 Diabetes</span>
+                            <span class="example-tag" onclick="fillSymptoms('burning urination, frequent urination, abdominal pain')" id="ex5">🚽 UTI</span>
+                            <span class="example-tag" onclick="fillSymptoms('shortness of breath, wheezing, night cough')" id="ex6">🫁 Asthma</span>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 25px;">
+                        <button type="submit" class="analyze-btn" id="analyzeBtn">
+                            <i class="fas fa-microscope"></i>
+                            <span id="analyze-text">Analyze Symptoms</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            {% if results %}
+            <div class="results-section">
+                <div class="results-header">
+                    <i class="fas fa-chart-line"></i>
+                    <h2 id="results-title">Analysis Results</h2>
+                </div>
+
+                <div class="symptoms-badge">
+                    <i class="fas fa-stethoscope"></i> 
+                    <span id="symptoms-label">Symptoms entered:</span> 
+                    <strong>{{ input_text }}</strong>
+                    {% if matched_count %}
+                        <span style="margin-inline-start: 10px; background: rgba(59,130,246,0.2); padding: 2px 8px; border-radius: 20px; font-size: 12px;" id="matched-badge">
+                            ✓ {{ matched_count }} symptoms matched
+                        </span>
                     {% endif %}
                 </div>
-            {% endfor %}
 
-            <div class="download-section">
-                <h3>📄 التقرير الطبي</h3>
-                <p>تم إنشاء التقرير بنجاح. يمكنك تحميله من الرابط أدناه:</p>
-                <a href="/download-pdf" class="download-btn">📥 تحميل تقرير PDF</a>
+                {% for item in results %}
+                <div class="diagnosis-card">
+                    <div class="disease-name">
+                        <i class="fas fa-diagnoses"></i>
+                        <span class="disease-name-text">{{ item.disease }}</span>
+                    </div>
+                    
+                    <div class="probability-bar">
+                        <div class="probability-fill" style="width: {{ item.probability }}%;"></div>
+                    </div>
+                    <div class="probability-text">
+                        <span id="confidence-label">Confidence:</span> <strong>{{ item.probability }}%</strong>
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <strong id="tests-label"><i class="fas fa-flask"></i> Recommended Tests:</strong>
+                        <ul class="tests-list">
+                            {% for test in item.tests %}
+                            <li><i class="fas fa-check-circle"></i> <span class="test-item">{{ test }}</span></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <div class="action-buttons">
+                    <button class="share-btn" id="share-btn" onclick="shareResults()">
+                        <i class="fas fa-share-alt"></i> <span id="share-text">Share Results</span>
+                    </button>
+                    <a href="/download-pdf" class="download-btn" id="download-btn">
+                        <i class="fas fa-file-pdf"></i> <span id="download-text">Download PDF Report</span>
+                    </a>
+                </div>
             </div>
+            {% endif %}
         </div>
-    {% endif %}
-    
-    <div class="info-section">
-        <h3>ℹ️ عن النظام</h3>
-        <p>هذا النظام يستخدم تقنيات الذكاء الاصطناعي (Random Forest Classifier) لتحليل الأعراض وتقديم تشخيص مبدئي. النتائج هي لأغراض استشارية فقط وليست بديلاً عن استشارة الطبيب المختص.</p>
-        <p>يدعم النظام تشخيص أكثر من 20 مرضًا مختلفًا بدقة تصل إلى 85-95%.</p>
+
+        <div class="footer" id="footer-text">
+            <i class="fas fa-heartbeat"></i> This system is for informational purposes only - Consult your doctor for accurate diagnosis
+        </div>
     </div>
-</div>
 
-<script>
-// تسجيل Service Worker لـ PWA
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/service-worker.js')
-            .then(function(registration) {
-                console.log('Service Worker registered successfully:', registration.scope);
-            })
-            .catch(function(error) {
-                console.log('Service Worker registration failed:', error);
+    <script>
+        // ======================
+        // ترجمة النصوص (English ↔ Arabic)
+        // ======================
+        const translations = {
+            ar: {
+                // تطبيق (App)
+                'app-title': 'MediAI',
+                'app-subtitle': 'نظام التشخيص الطبي بالذكاء الاصطناعي',
+                'stat-diseases': 'مرض مدعوم',
+                'stat-accuracy': 'دقة التشخيص',
+                'stat-ml': 'Random Forest',
+                
+                // نموذج الإدخال (Form)
+                'symptoms-placeholder': 'أدخل الأعراض مفصولة بفواصل...\nمثال: حمى، سعال، صداع، تعب',
+                'example-title': 'أمثلة لأعراض شائعة:',
+                'analyze-btn': 'تحليل الأعراض',
+                
+                // أمثلة (Examples)
+                'ex1': '🔥 إنفلونزا',
+                'ex2': '🤧 نزلة برد',
+                'ex3': '🤕 صداع نصفي',
+                'ex4': '🩸 سكري',
+                'ex5': '🚽 التهاب المسالك',
+                'ex6': '🫁 ربو',
+                
+                // النتائج (Results)
+                'results-title': 'نتائج التحليل',
+                'symptoms-label': 'الأعراض المدخلة:',
+                'matched-badge': '✓ عرض متطابق',
+                'confidence-label': 'نسبة الثقة:',
+                'tests-label': 'الفحوصات الموصى بها:',
+                
+                // الأزرار (Buttons)
+                'share-text': 'مشاركة النتائج',
+                'download-text': 'تحميل التقرير (PDF)',
+                
+                // تذييل
+                'footer-text': 'هذا النظام للأغراض الاستشارية فقط - استشر طبيبك للحصول على تشخيص دقيق',
+                
+                // Toast messages
+                'copied': 'تم نسخ النتائج إلى الحافظة 📋',
+                'share-title': 'نتائج التشخيص - MediAI'
+            },
+            en: {
+                'app-title': 'MediAI',
+                'app-subtitle': 'AI Medical Diagnosis System',
+                'stat-diseases': 'Diseases Supported',
+                'stat-accuracy': 'Accuracy',
+                'stat-ml': 'Random Forest',
+                'symptoms-placeholder': 'Enter your symptoms separated by commas...\nExample: fever, cough, headache, fatigue',
+                'example-title': 'Common examples:',
+                'analyze-btn': 'Analyze Symptoms',
+                'ex1': '🔥 Influenza',
+                'ex2': '🤧 Common Cold',
+                'ex3': '🤕 Migraine',
+                'ex4': '🩸 Diabetes',
+                'ex5': '🚽 UTI',
+                'ex6': '🫁 Asthma',
+                'results-title': 'Analysis Results',
+                'symptoms-label': 'Symptoms entered:',
+                'matched-badge': '✓ symptoms matched',
+                'confidence-label': 'Confidence:',
+                'tests-label': 'Recommended Tests:',
+                'share-text': 'Share Results',
+                'download-text': 'Download PDF Report',
+                'footer-text': 'This system is for informational purposes only - Consult your doctor for accurate diagnosis',
+                'copied': 'Results copied to clipboard 📋',
+                'share-title': 'MediAI Diagnosis Results'
+            }
+        };
+
+        let currentLang = localStorage.getItem('language') || 'en';
+        
+        function updateLanguage(lang) {
+            // تحديث اتجاه الصفحة
+            const body = document.body;
+            if (lang === 'ar') {
+                body.classList.remove('lang-en');
+                body.classList.add('lang-ar');
+            } else {
+                body.classList.remove('lang-ar');
+                body.classList.add('lang-en');
+            }
+            
+            // تحديث النصوص
+            const t = translations[lang];
+            for (const [id, text] of Object.entries(t)) {
+                const element = document.getElementById(id);
+                if (element) element.innerHTML = text;
+            }
+            
+            // تحديث placeholder للحقل النصي
+            const symptomsField = document.getElementById('symptoms');
+            if (symptomsField) {
+                symptomsField.placeholder = t['symptoms-placeholder'];
+            }
+            
+            // تحديث زر التحليل إذا كان في حالة غير محملة
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const analyzeSpan = analyzeBtn?.querySelector('span');
+            if (analyzeSpan && !analyzeSpan.contains(document.querySelector('.loading'))) {
+                analyzeSpan.innerHTML = t['analyze-btn'];
+            }
+            
+            localStorage.setItem('language', lang);
+        }
+        
+        function toggleLanguage() {
+            currentLang = currentLang === 'ar' ? 'en' : 'ar';
+            updateLanguage(currentLang);
+        }
+        
+        // تهيئة اللغة المحفوظة
+        const savedLang = localStorage.getItem('language') || 'en';
+        updateLanguage(savedLang);
+        currentLang = savedLang;
+
+        // ======================
+        // الوضع الليلي
+        // ======================
+        function toggleTheme() {
+            document.body.classList.toggle('dark');
+            const icon = document.querySelector('.theme-toggle i');
+            if (document.body.classList.contains('dark')) {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark');
+            const icon = document.querySelector('.theme-toggle i');
+            icon.classList.remove('fa-moon');
+            icon.classList.add('fa-sun');
+        }
+
+        // ======================
+        // تعبئة الأعراض
+        // ======================
+        function fillSymptoms(text) {
+            document.getElementById('symptoms').value = text;
+            document.getElementById('symptoms').focus();
+        }
+
+        // ======================
+        // مشاركة النتائج
+        // ======================
+        async function shareResults() {
+            const symptoms = document.querySelector('.symptoms-badge strong')?.innerText || '';
+            const diseaseElement = document.querySelector('.disease-name-text');
+            const disease = diseaseElement?.innerText || '';
+            const probability = document.querySelector('.probability-text strong')?.innerText || '';
+            
+            const t = translations[currentLang];
+            const shareText = `🏥 MediAI - ${currentLang === 'ar' ? 'التشخيص الطبي' : 'Medical Diagnosis'}\n\n📝 ${currentLang === 'ar' ? 'الأعراض' : 'Symptoms'}: ${symptoms}\n🦠 ${currentLang === 'ar' ? 'التشخيص المحتمل' : 'Diagnosis'}: ${disease}\n📊 ${currentLang === 'ar' ? 'نسبة الثقة' : 'Confidence'}: ${probability}%\n\n🔗 ${window.location.href}`;
+            
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: t['share-title'],
+                        text: shareText,
+                        url: window.location.href
+                    });
+                } catch (err) {
+                    console.log('تم إلغاء المشاركة');
+                }
+            } else {
+                await navigator.clipboard.writeText(shareText);
+                showToast(t['copied']);
+            }
+        }
+
+        // ======================
+        // Toast notification
+        // ======================
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // ======================
+        // تأثير تحميل عند الإرسال
+        // ======================
+        const form = document.getElementById('diagnosisForm');
+        const btn = document.getElementById('analyzeBtn');
+
+        if (form) {
+            form.addEventListener('submit', function() {
+                const t = translations[currentLang];
+                btn.innerHTML = '<span class="loading"></span> <span>' + t['analyze-btn'] + '</span>';
+                btn.disabled = true;
+                setTimeout(() => {
+                    btn.disabled = false;
+                }, 5000);
             });
-    });
-}
-</script>
+        }
 
+        // ======================
+        // Service Worker (PWA)
+        // ======================
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(reg => console.log('Service Worker registered:', reg))
+                    .catch(err => console.log('Service Worker error:', err));
+            });
+        }
+    </script>
 </body>
 </html>

@@ -1,13 +1,12 @@
 {
-  "name": "النظام الطبي الذكي - Medical AI",
-  "short_name": "طبي AI",
-  "description": "تطبيق للتحليل الذكي للأعراض الطبية وتقديم الفحوصات المناسبة",
+  "name": "MediAI - التشخيص الطبي بالذكاء الاصطناعي",
+  "short_name": "MediAI",
+  "description": "نظام تشخيص طبي ذكي باستخدام الذكاء الاصطناعي",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#667eea",
+  "background_color": "#1e3a5f",
+  "theme_color": "#1e3a5f",
   "orientation": "portrait",
-  "scope": "/",
   "icons": [
     {
       "src": "/static/icon-72.png",
@@ -18,44 +17,37 @@
     {
       "src": "/static/icon-96.png",
       "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
       "src": "/static/icon-128.png",
       "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
       "src": "/static/icon-144.png",
       "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
       "src": "/static/icon-152.png",
       "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
       "src": "/static/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
       "src": "/static/icon-384.png",
       "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
       "src": "/static/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
+      "type": "image/png"
     }
   ]
 }
