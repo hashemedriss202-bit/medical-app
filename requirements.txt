@@ -2,3 +2,7 @@ flask
 gunicorn
 reportlab
 requests
+pandas
+numpy
+scikit-learn
+joblib
