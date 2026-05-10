@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>غير متصل - النظام الطبي الذكي</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .offline-container {
+            text-align: center;
+            padding: 50px 20px;
+        }
+        .offline-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container offline-container">
+        <div class="offline-icon">📡</div>
+        <h1>أنت غير متصل بالإنترنت</h1>
+        <p>يرجى التحقق من اتصالك بالشبكة والمحاولة مرة أخرى.</p>
+        <p>عند استعادة الاتصال، سيعمل التطبيق بشكل طبيعي.</p>
+        <button onclick="location.reload()">🔄 إعادة المحاولة</button>
+    </div>
+</body>
+</html>
